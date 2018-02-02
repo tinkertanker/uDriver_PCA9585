@@ -1,0 +1,31 @@
+===MicroDriver PCA9685===
+Design Specificiation
+
+[ABOUT]
+PCA9685 Driver for the MicroBit in the form of a library/makecode package.
+
+[DESIGN]
+Commication with the PCA9685 is done via i2c, All PCA9685 respond to thef
+i2c address 0xE0, hence unless given otherwise, that address would be the 
+default address used for communication with the PCA9685. 
+
+The PCA9685 uses a control register to address the rest of its many registers
+when writing to the PCA9685, the first byte  written to the PCA9685 would go
+into the control register, which would select which register the rest of the
+data goes to.
+
+Exposed API
+-----
+analog_write(pin, %duty_cycle) - write % duty cycle to the pin on the PCA9685
+select_address(i2c_addr) - select the i2c address to use whenn talking to PCA9685
+
+--Advanced--
+set_pwm_frequency(hertz) - set PWM modulation frequency
+sleep_mode(microseconds) - activate sleep mode on the PCA9685 for given 
+                            microseconds
+
+Internals
+-----
+pwm_write(pin, value) - write PWM value 0 to 4095.
+register_read(reg) - read value from register.
+register_write(reg, value) - write value to register 
