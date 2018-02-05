@@ -14,18 +14,31 @@ when writing to the PCA9685, the first byte  written to the PCA9685 would go
 into the control register, which would select which register the rest of the
 data goes to.
 
+The PCA9685 would be designed as an OOP api as the user may wish to 
+connect more than one PCA9685 - though a functional API may be used to simply
+the use of the library
+
+By default, the PCA9685 has 25 Mhz built in oscillator and a 200Hz PWM frequency
 Exposed API
 -----
-analog_write(pin, %duty_cycle) - write % duty cycle to the pin on the PCA9685
-select_address(i2c_addr) - select the i2c address to use whenn talking to PCA9685
-
---Advanced--
+PCA9685(i2c address) - create PCA9685 object for i2c address - defaults to global 
+    LED all call address(see datasheet)
+analog_write(pin, %duty_cycle) - write % duty cycle to the a set of GVS pins on
+    the PCA9685 - analog is a value mapping to pwm write as makecode SHIM does  
+    not support floating point type mapping
+pwm_write(pin, value) - PWM write value between 0 4095 to the pin on the PCA9685
+==== Advanced ===== - API set as advanced in makecode
 set_pwm_frequency(hertz) - set PWM modulation frequency
 sleep_mode(microseconds) - activate sleep mode on the PCA9685 for given 
                             microseconds
+software_reset() - make the PCA9685 do a software reset
 
-Internals
------
-pwm_write(pin, value) - write PWM value 0 to 4095.
-register_read(reg) - read value from register.
-register_write(reg, value) - write value to register 
+Internal Calls
+----
+configure_mode(setting, value) - configure the PCA9685 mode register's setting 
+    for the given value
+register_write(reg, value) - write to the register on the PCA9685 given by 
+    address the value
+register_read(reg) - read value from the the register on the PCA9685 given.;
+
+TODO: should maybe add capablitiy to change I2c address -

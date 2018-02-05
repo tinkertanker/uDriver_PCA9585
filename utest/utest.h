@@ -185,9 +185,9 @@ typedef struct test_state_t TestState;
 
 /** Pointer to the TesState of the current test @private */
 #ifdef thread_local
-    thread_local TestState *_current_test_state;
+    extern thread_local TestState *_current_test_state;
 #else
-    TestState *_current_test_state;
+    extern TestState *_current_test_state;
 #endif /* ifdef thread_local */
 
 /** @private */
