@@ -14,6 +14,8 @@ using namespace UDriver_PCA9685;
 PCA9685::PCA9685(I2CAddress addr)
 {
     this->address = addr;
+    this->configure_mode(Mode_Sleep, 0);
+
 }
 
 void PCA9685::register_write(uint8_t addr, uint8_t value)
@@ -51,6 +53,26 @@ uint8_t PCA9685::register_read(uint8_t addr)
     return data;
 }
 
+#define REG_MODE 0x0
+
+void PCA9685::configure_mode(Mode setting, uint8_t value)
+{
+    value = !!value; //Force value into 0 or 1
+    
+    uint8_t mode_register = this->register_read(REG_MODE);
+    //Change setting bit
+    mode_register &= ~(1 << setting); //Unset Setting Bit
+    mode_register |= (value << setting);  //Set setting bit if specified value
+    this->register_write(REG_MODE, mode_register);
+}
+
+void PCA9685::software_reset()
+{
+    MicroBitI2C bus_i2c(I2C_SDA0, I2C_SCL0);
+    uint8_t swrst_code = 0x6;
+    bus_i2c.write(0x0, (char *)&swrst_code, sizeof(uint8_t));
+}
+
 /* Macros to determine control register address. Ref Datasheet */
 #define REG_ADDR_ON_L(pin) (pin * 4 + 0 + 6)
 #define REG_ADDR_ON_H(pin) (pin * 4 + 1 + 6)
@@ -63,15 +85,14 @@ void PCA9685::pwm_write(Pin pin, int value)
         return;
 
     //ON Register
-    this->register_write(REG_ADDR_ON_H(pin), 0x1);
-    this->register_write(REG_ADDR_ON_L(pin), 0x1);
+    this->register_write(REG_ADDR_OFF_L(pin), 0x00);
+    this->register_write(REG_ADDR_OFF_H(pin), 0x00);
 
     uint8_t off_lsb = (value & 0xFF); //Get least significant 8 bits
     value >>= 8;
-    uint8_t off_hsb = (value & 0xF); //Get most signification 4 bits
+    uint8_t off_hsb = (value & 0x0F); //Get most significant 4 bits
     
     //OFF Register
-    this->register_write(REG_ADDR_OFF_H(pin), off_hsb);
     this->register_write(REG_ADDR_OFF_L(pin), off_lsb);
-
+    this->register_write(REG_ADDR_OFF_H(pin), off_hsb);
 }

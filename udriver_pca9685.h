@@ -10,6 +10,8 @@
 namespace UDriver_PCA9685 
 {
     typedef uint8_t I2CAddress;
+    
+    /* Defines the GVS pins on the PCA9685 */
     typedef enum pin_t
     {
         Pin_P0 = 0,
@@ -30,6 +32,19 @@ namespace UDriver_PCA9685
         Pin_P15 = 15
     }Pin;
     
+    /* Defines the modes/settings on the PCA9685 */
+    typedef enum mode_t
+    {
+        Mode_AllCall_Addr = 0,
+        Mode_SubCall1_Addr = 1,
+        Mode_SubCall2_Addr = 2,
+        Mode_SubCall3_Addr = 3,
+        Mode_Sleep = 4,
+        Mode_AutoInc = 5,
+        Mode_ExtClock = 6,
+        Mode_Restart = 7,
+    }Mode;
+
     const I2CAddress I2C_ADDRESS_ALL_CALL = 0xE0;
     
     class PCA9685
@@ -61,7 +76,7 @@ namespace UDriver_PCA9685
         I2CAddress address;
         uint16_t mode_register;
         
-        void configure_mode(uint8_t setting, uint8_t value);
+        void configure_mode(Mode setting, uint8_t value);
         void register_write(uint8_t reg_addr, uint8_t value);
         uint8_t register_read(uint8_t reg_addr);
     };
