@@ -6,13 +6,11 @@
 #include "utest.h"
 
 //Debugging Utilities
-#ifndef MICROBIT_H
-#define PRINTF printf
-#else
-static MicroBit uBit;
+#ifdef MICROBIT_H
 #define PRINTF uBit.serial.printf
-#endif /* ifndef MICROBIT_H */
-
+#else
+#define PRINTF printf
+#endif /* ifdef MICROBIT_H */
 
 void _debug_mem_dump(void *mptr, size_t len, size_t blk, const char *fname, \
         int line)
@@ -23,7 +21,7 @@ void _debug_mem_dump(void *mptr, size_t len, size_t blk, const char *fname, \
     //Opening Header 
     PRINTF("DEBUG: %s: %d: %s",fname,line, "Memory Dump BEGIN");
 
-    const char *ptr = mptr;
+    const char *ptr = (const char *)mptr;
     
     //Dump Memory
     for(size_t pos = 0; pos < len; pos += blk)
@@ -32,15 +30,15 @@ void _debug_mem_dump(void *mptr, size_t len, size_t blk, const char *fname, \
         { PRINTF("\r\nDEBUG:%#08lx: ", (unsigned long) pos ); }
 
         if(blk <= sizeof(char)) 
-            PRINTF("%" "hh" "X",  *((unsigned char *) ptr + pos)); 
+            PRINTF("%" "2hh" "X",  *((unsigned char *) ptr + pos)); 
         else if(blk <= sizeof(short)) 
-            PRINTF("%" "h" "X",  *((unsigned short *) ptr + pos)); 
+            PRINTF("%" "4h" "X",  *((unsigned short *) ptr + pos)); 
         else if(blk <= sizeof(int)) 
-            PRINTF("%" "" "X",  *((unsigned int *) ptr + pos)); 
+            PRINTF("%" "8" "X",  *((unsigned int *) ptr + pos)); 
         else if(blk <= sizeof(long)) 
-            PRINTF("%" "l" "X",  *((unsigned long *) ptr + pos)); 
+            PRINTF("%" "8l" "X",  *((unsigned long *) ptr + pos)); 
         else if(blk <= sizeof(long long)) 
-            PRINTF("%" "ll" "X",  *((unsigned long long *) ptr + pos)); 
+            PRINTF("%" "16ll" "X",  *((unsigned long long *) ptr + pos)); 
         
         PRINTF(" "); //Space between blocks
     }
@@ -52,12 +50,6 @@ void _debug_mem_dump(void *mptr, size_t len, size_t blk, const char *fname, \
 //Test Harness
 #define TEST_LJMP_FAIL -1
 
-#ifdef thread_local
-    thread_local TestState *_current_test_state = NULL;
-#else
-    TestState *_current_test_state = NULL;
-#endif
-
 /** @private */
 struct test_state_t
 {
@@ -68,12 +60,21 @@ struct test_state_t
     int16_t line;
     double time;
     jmp_buf jmpbuf;
-    struct test_state_t *next;
+    uint16_t tlen;
+    uint16_t tpass;
 };
+
+/** @private Global Variable for test failure handling */
+#ifdef thread_local
+static thread_local TestState *_current_test_state;
+#else
+#warning uTest will not be thread safe: Thread local variables are not supported
+static TestState *_current_test_state;
+#endif
 
 void test_signal_handler(int sig)
 {
-    char *sbuf = malloc(sizeof(char) * 30);
+    char *sbuf = (char *)malloc(sizeof(char) * 30);
     snprintf(sbuf, sizeof(char) *30, "Caught Deadly Signal: %d", sig);
 
     if(sig == SIGHUP) snprintf(sbuf, sizeof(char) * 30, "Caught Signal: SIGHUP");
@@ -128,8 +129,10 @@ TestState *_test_setup()
     signal(SIGPROF, &test_signal_handler);
 
     //Setup Test State
-    TestState *tstate = malloc(sizeof(TestState));
+    TestState *tstate = (TestState *)malloc(sizeof(TestState));
     memset(tstate, 0, sizeof(TestState));
+
+    PRINTF("*=====TEST BEGIN===---\r\n");
 
     return tstate;
 }
@@ -138,40 +141,30 @@ void _test_run(TestState *tstate, TestFunc *tfunc, const char *fname)
 {
     if(!tstate || !tfunc) return;
     
-    //Configure Current Test State
-    if(!_current_test_state) _current_test_state = tstate; //First Stuct not used
-    else 
-    {
-        _current_test_state->next = malloc(sizeof(TestState));
-        memset(_current_test_state->next, 0, sizeof(TestState));
-        _current_test_state =  _current_test_state->next;
-    }
-
-    strncpy(_current_test_state->name, fname, TEST_STATE_LIMIT_NAME_STRLEN);
-    _current_test_state->func = tfunc;
-    _current_test_state->status = false;
-    _current_test_state->line = -1;
-    _current_test_state->time = 0.0;
-    _current_test_state->next = NULL;
+    strncpy(tstate->name, fname, TEST_STATE_LIMIT_NAME_STRLEN);
+    tstate->func = tfunc;
+    tstate->status = false;
+    memset(tstate->reason, 0, sizeof(char) * TEST_STATE_LIMIT_REASON_STRLEN);
+    tstate->line = -1;
+    tstate->time = 0.0;
+    memset(tstate->jmpbuf, 0, sizeof(jmp_buf));
 
     //Timing Runtime
     clock_t clock_begin = clock();
     time_t time_begin = time(NULL);
     
-    PRINTF("Run %s()...", fname);
-    
+    _current_test_state = tstate;
     //Setup jmpbuf to jump out of the failing test
-    if(setjmp(_current_test_state->jmpbuf) == TEST_LJMP_FAIL)
+    if(setjmp(tstate->jmpbuf) != TEST_LJMP_FAIL)
+    {
+        //Run Test
+        (*tfunc)();
+        tstate->status = true;
+    }
+    else
     {
         //Long Jmp from failing test
-        PRINTF("FAIL\r\n");
-        _current_test_state->status = false;
-    }
-    else //Run Test
-    {
-        (*tfunc)();
-        PRINTF("PASS\r\n");
-        _current_test_state->status = true;
+        tstate->status = false;
     }
     
     //Compute Time Taken
@@ -180,22 +173,25 @@ void _test_run(TestState *tstate, TestFunc *tfunc, const char *fname)
     double time_elapse = (double) time(NULL) - time_begin;
     
     //Perfer Clock's increased precision but use time if clock overflows
-    _current_test_state->time = (clock_elapse > time_elapse) ? 
+    tstate->time = (clock_elapse > time_elapse) ? 
         clock_elapse : time_elapse;
     
 }
 
 void _test_fail(const char *msg, int line)
 {
-    strncpy(_current_test_state->reason, msg, TEST_STATE_LIMIT_REASON_STRLEN);
-    _current_test_state->line = (line < 1) ? -1 : line;
+    TestState *tstate = _current_test_state;
 
-    longjmp(_current_test_state->jmpbuf, TEST_LJMP_FAIL);
+    tstate->status = false; //Test Failed
+    strncpy(tstate->reason, msg, TEST_STATE_LIMIT_REASON_STRLEN);
+    tstate->line = (line < 1) ? -1 : line;
+
+    longjmp(tstate->jmpbuf, TEST_LJMP_FAIL);
 }
 
 char *human_readable_time(double tsec)
 {
-    char *htime = malloc(sizeof(char) * 10);
+    char *htime = (char *)malloc(sizeof(char) * 10);
 
     if(tsec > 60.0) 
     { snprintf(htime, sizeof(char) * 10, "%.3f min", tsec / 60.0); }
@@ -215,59 +211,35 @@ void _test_report(TestState *tstate)
 {
     if(!tstate) return;
 
-    PRINTF("---===TEST REPORT===---\r\n");
-
-    int tlen = 0; //Determine Number of Tests Run
-    int tpass = 0; //Determine Number of Tests Run without failure
-    
-    TestState *ts = NULL;
-    do 
+    //Print Test report/summary
+    char *htime = human_readable_time(tstate->time);
+    char sstatus[20];
+    if(!tstate->status) 
     {
-        ts = (!ts) ? tstate : ts->next;
+        (tstate->line < 1) ? snprintf(sstatus, sizeof(char) * 20, "FAIL") : 
+            snprintf(sstatus, sizeof(char) * 20, "FAIL@%d", tstate->line);
+    }
+    else
+    { snprintf(sstatus, sizeof(char) * 20, "PASS"); }
 
-        //Print Test report/summary
-        char *htime = human_readable_time(ts->time);
-        char sstatus[20];
-        if(!ts->status) 
-        {
-            (ts->line < 1) ? snprintf(sstatus, sizeof(char) * 20, "FAIL") : 
-                snprintf(sstatus, sizeof(char) * 20, "FAIL@%d", ts->line);
-        }
-        else
-        { snprintf(sstatus, sizeof(char) * 20, "PASS"); }
+    PRINTF("* Run %-30s - %s [%s]\r\n", tstate->name, sstatus, htime);
+    if(!tstate->status) PRINTF("\t! %s\r\n", tstate->reason);
+    free(htime);
+
+    tstate->tlen ++;
+    if(tstate->status == true) tstate->tpass ++;  //Test Passed
     
-        PRINTF("Test %s() - %s [%s]\r\n", ts->name, sstatus, htime);
-        PRINTF("\t%s\r\n", ts->reason);
-        free(htime);
-
-        tlen ++;
-        if(ts->status == true) // Test Passed
-            tpass ++; 
-    }while(ts->next != NULL);
-
-    
-    PRINTF("============================\r\n");
-    PRINTF(" %d Tests Failed / %d Tests Run\r\n", tlen - tpass, tlen);
-    PRINTF(" Overall: %s\r\n", (tpass >= tlen)  ? "PASS" : "FAIL");
-    PRINTF("---===TEST END===---\r\n");
 }
 
-void _test_cleanup(TestState **tstate_ptr)
+void _test_end(TestState **tstate_ptr)
 {
     TestState *tstate = (*tstate_ptr);
     if(!tstate) return;
     
-    
-    TestState *ts = tstate;
-    TestState *ts_next = tstate;
+    //Print Test Summary
+    PRINTF("*=====TEST END===---\r\n");
+    PRINTF(" %d Tests Failed / %d Tests Run\r\n", tstate->tlen - tstate->tpass, tstate->tlen);
+    PRINTF(" Overall: %s\r\n", (tstate->tpass >= tstate->tlen)  ? "PASS" : "FAIL");
 
-    do
-    {
-        ts = ts_next;
-        ts_next = ts->next;
-        free(ts);
-    }while(ts_next != NULL);
-    
-    _current_test_state = NULL;
-    (*tstate_ptr) = NULL;
+    free(tstate);
 }

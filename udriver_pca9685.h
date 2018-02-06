@@ -5,7 +5,8 @@
 #include "utest/utest.h"
 
 #define UDRIVER_PCA9685_PANIC_CODE 90
-
+#define UDRIVER_PCA9685_PWM_MAX 4095
+#define UDRIVER_PCA9685_PWM_MIN 0 
 namespace UDriver_PCA9685 
 {
     typedef uint8_t I2CAddress;
@@ -37,10 +38,9 @@ namespace UDriver_PCA9685
         /* Construct a new instance of PCA9685 for the optional i2c address
          * If no i2c address is given would use all call address
         */
-        PCA9685 (I2CAddress addr=I2C_ADDRESS_ALL_CALL){}
+        PCA9685 (I2CAddress addr=I2C_ADDRESS_ALL_CALL);
         
         /* PWM write value between 0-4095 to the given GVS Pin on the PCA9685 */
-        //%
         void pwm_write(Pin pin, int value);
         
         /* Change the PWM modulation frequency to the given frequency in hertz 
@@ -64,19 +64,7 @@ namespace UDriver_PCA9685
         void configure_mode(uint8_t setting, uint8_t value);
         void register_write(uint8_t reg_addr, uint8_t value);
         uint8_t register_read(uint8_t reg_addr);
-    }
-    
-    //Functional Callbacks for makecode package
-    //%
-    void pwm_write(Pin pin, int value)
-    //%
-    void set_pwm_frequency(int frequency);
-    //%
-    void sleep(int msec);
-    //%
-    void software_reset();
-    //%
-    void set_address(int address);
+    };
 }
 
 #endif /* ifndef UDRIVER_PCA9685 */

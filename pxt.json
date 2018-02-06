@@ -12,12 +12,13 @@
         "udriver_pca9685.cpp",
         "udriver_pca9685.h",
         "udriver_pca9685.ts",
-        "utest/utest.h",
-        "utest/utest.c",
         "shims.d.ts",
         "enums.d.ts"
     ],
     "testFiles": [
+        "utest/utest.h",
+        "utest/utest.c",
+        "test.cpp",
         "test.ts"
     ],
     "public": false

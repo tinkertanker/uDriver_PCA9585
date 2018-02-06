@@ -39,6 +39,6 @@ configure_mode(setting, value) - configure the PCA9685 mode register's setting
     for the given value
 register_write(reg, value) - write to the register on the PCA9685 given by 
     address the value
-register_read(reg) - read value from the the register on the PCA9685 given.;
+register_read(reg) - read value from the the register on the PCA9685 given.
 
 TODO: should maybe add capablitiy to change I2c address -
