@@ -54,9 +54,19 @@ namespace UDriver_PCA9685
          * If no i2c address is given would use all call address
         */
         PCA9685 (I2CAddress addr=I2C_ADDRESS_ALL_CALL);
+
+        /* digital write 0 or 1 to the given PWM Pin on the PCA9685 */
+        void digital_write(Pin pin, int value);
+
+        /* digital write 0 or 1 to all PWM Pins on the PCA9685 */
+        void digital_write_all(int value);
         
-        /* PWM write value between 0-4095 to the given GVS Pin on the PCA9685 */
+        /* PWM write value between 0-4095 to the given PWM Pin on the PCA9685 */
         void pwm_write(Pin pin, int value);
+
+        /* PWM write value between 0-4095 to all PWM Pins on the PCA9685 */
+        void pwm_write_all(int value);
+        
         
         /* Change the PWM modulation frequency to the given frequency in hertz 
          * NOTE: This function assumes that no external clock is used, and the
@@ -64,21 +74,25 @@ namespace UDriver_PCA9685
         */
         void set_pwm_frequency(int frequency);
 
-        /* Activate sleep mode on the PCA9685 for the given number of 
-         * microseconds.
+        /* Activate low-power sleep mode on the PCA9685.
         */
-        void sleep(int msec);
+        void sleep();
+        
+        /* Deactivate low-power sleep mode on the PCA9685.
+        */
+        void wake();
     
         /* Make the PCA9685 do a software reset */
         void software_reset();
 
     private:
         I2CAddress address;
-        uint16_t mode_register;
+        uint8_t prev_mode;
         
-        void configure_mode(Mode setting, uint8_t value);
         void register_write(uint8_t reg_addr, uint8_t value);
         uint8_t register_read(uint8_t reg_addr);
+        void configure_mode(Mode setting, uint8_t value);
+        void restore_mode();
     };
 }
 
