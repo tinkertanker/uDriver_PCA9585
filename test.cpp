@@ -35,7 +35,6 @@ namespace Test
         mode_reg = device.register_read(0x0);
         
         TEST_EQUAL(((mode_reg & (1 << Mode_Sleep)) >> Mode_Sleep), 1);
-
     }
 
     void test_software_reset()
@@ -53,7 +52,6 @@ namespace Test
         
         for(int i = 0; i <= 4095; i += 5)
         {
-            DPRINTF("Testing PWM level: %d\r\n", i);
             device.pwm_write(Pin_P0, i);
 
             TEST_EQUAL(device.register_read(0x06), 0x00);
@@ -73,6 +71,17 @@ namespace Test
         }
     }
 
+    void test_sleep()
+    {
+        PCA9685 device;
+        device.sleep();
+        uint8_t mode_reg = device.register_read(0x0);
+        TEST_EQUAL(((mode_reg & (1 << Mode_Sleep)) >> Mode_Sleep), 1);
+
+        device.wake();
+        mode_reg = device.register_read(0x0);
+        TEST_EQUAL((mode_reg & (1 << Mode_Sleep)), 0);
+    }
 
     //%
     void unit_test()
@@ -82,6 +91,7 @@ namespace Test
         TEST(test_configure_mode);
         TEST(test_software_reset);
         TEST(test_pwm_write);
+        TEST(test_sleep);
         TEST_END;
     }
 }
