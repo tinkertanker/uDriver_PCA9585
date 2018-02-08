@@ -203,11 +203,11 @@ void PCA9685::pwm_write_all(int value)
     }
     this->restore_mode();
 }
-
+ 
 #define REG_ADDR_PRESCALE 0xFE
-#define PRESCALE_VALUE(freq) (round(25000000/(4096 * freq)) - 1)
+#define PRESCALE_VALUE(freq) (round(25000000.0/(4096.0 * (double)freq)) - 1)
 void PCA9685::set_pwm_frequency(int frequency)
-{
+ {
     if(PRESCALE_VALUE(frequency) < 0x03 || PRESCALE_VALUE(frequency) > 0xFF)
         return;
     

@@ -133,10 +133,22 @@ namespace Test
         }
     }
 
+    void test_set_pwm_frequency()
+    {
+        PCA9685 device;
+        
+        device.set_pwm_frequency(1526);
+        TEST_EQUAL(device.register_read(0xFE), 0x03);
+        device.set_pwm_frequency(24);
+        TEST_EQUAL(device.register_read(0xFE), 0xFD);
+        device.set_pwm_frequency(200);
+    }
+
     //%
     void unit_test()
     {
         TEST_BEGIN;
+
         TEST(test_register_rw);
         TEST(test_configure_mode);
         TEST(test_software_reset);
@@ -145,6 +157,8 @@ namespace Test
         TEST(test_digital_write);
         TEST(test_pwm_write_all);
         TEST(test_digital_write_all);
+        
+        TEST(test_set_pwm_frequency);
         TEST_END;
     }
 }
