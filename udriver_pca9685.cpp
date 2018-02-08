@@ -4,8 +4,8 @@
 */
 
 #define DEBUG
-#include "udriver_pca9685.h"
 
+#include "udriver_pca9685.h"
 
 using namespace pxt;
 using namespace UDriver_PCA9685;
@@ -97,7 +97,7 @@ void PCA9685::wake()
 #define REG_ADDR_ALL_OFF_L 0xFC
 #define REG_ADDR_ALL_OFF_H 0xFD
 
-void PCA9685::pwm_write(Pin pin, int value)
+void PCA9685::digital_write(Pin pin, int value)
 {
     if(value < 0 || value > 1) return;
     
@@ -105,11 +105,15 @@ void PCA9685::pwm_write(Pin pin, int value)
 
     if(value == 1)
     {
+        this->register_write(REG_ADDR_OFF_L(pin), 0x00);
+        this->register_write(REG_ADDR_OFF_H(pin), 0x00);
         this->register_write(REG_ADDR_ON_L(pin), 0x00);
         this->register_write(REG_ADDR_ON_H(pin), 0x10);
     }
     else
     {
+        this->register_write(REG_ADDR_ON_L(pin), 0x00);
+        this->register_write(REG_ADDR_ON_H(pin), 0x00);
         this->register_write(REG_ADDR_OFF_L(pin), 0x00);
         this->register_write(REG_ADDR_OFF_H(pin), 0x10);
     }
@@ -126,15 +130,19 @@ void PCA9685::digital_write_all(int value)
 
     if(value == 1)
     {
+        this->register_write(REG_ADDR_ALL_OFF_L, 0x00);
+        this->register_write(REG_ADDR_ALL_OFF_H, 0x00);
         this->register_write(REG_ADDR_ALL_ON_L, 0x00);
         this->register_write(REG_ADDR_ALL_ON_H, 0x10);
     }
     
     else
     {
+        //Write default value
+        this->register_write(REG_ADDR_ALL_ON_L, 0x00);
+        this->register_write(REG_ADDR_ALL_ON_H, 0x10);
         this->register_write(REG_ADDR_ALL_OFF_L, 0x00);
         this->register_write(REG_ADDR_ALL_OFF_H, 0x10);
-
     }
 
     this->restore_mode();
@@ -146,7 +154,7 @@ void PCA9685::pwm_write(Pin pin, int value)
     if(value < UDRIVER_PCA9685_PWM_MIN || value > UDRIVER_PCA9685_PWM_MAX)
         return;
 
-    this-wake();
+    this->wake();
 
     //ON Register
     this->register_write(REG_ADDR_ON_L(pin), 0x00);
@@ -169,23 +177,34 @@ void PCA9685::pwm_write_all(int value)
         return; 
 
     this->wake();
-
-    //ON Register
-    this->register_write(REG_ADDR_ALL_ON_L, 0x00);
-    this->register_write(REG_ADDR_ALL_ON_H, 0x00);
-
-    uint8_t off_lsb = (value & 0xFF); //Get least significant 8 bits
-    value >>= 8;
-    uint8_t off_hsb = (value & 0x0F); //Get most significant 4 bits
     
-    //OFF Register
-    this->register_write(REG_ADDR_ALL_OFF_L, off_lsb);
-    this->register_write(REG_ADDR_ALL_OFF_H, off_hsb);
+    if(value == 0)
+    {
+        //Write default value
+        this->register_write(REG_ADDR_ALL_ON_L, 0x00);
+        this->register_write(REG_ADDR_ALL_ON_H, 0x10);
+        this->register_write(REG_ADDR_ALL_OFF_L, 0x00);
+        this->register_write(REG_ADDR_ALL_OFF_H, 0x10);
+    }
+    else
+    {
+        //ON Register
+        this->register_write(REG_ADDR_ALL_ON_L, 0x00);
+        this->register_write(REG_ADDR_ALL_ON_H, 0x00);
 
+        uint8_t off_lsb = (value & 0xFF); //Get least significant 8 bits
+        value >>= 8;
+        uint8_t off_hsb = (value & 0x0F); //Get most significant 4 bits
+        
+        //OFF Register
+        this->register_write(REG_ADDR_ALL_OFF_L, off_lsb);
+        this->register_write(REG_ADDR_ALL_OFF_H, off_hsb);
+
+    }
     this->restore_mode();
 }
 
-#define REG_ADDR_PRESCALE
+#define REG_ADDR_PRESCALE 0xFE
 #define PRESCALE_VALUE(freq) (round(25000000/(4096 * freq)) - 1)
 void PCA9685::set_pwm_frequency(int frequency)
 {
