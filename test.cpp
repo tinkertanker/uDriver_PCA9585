@@ -105,7 +105,7 @@ namespace Test
     {
         PCA9685 device;
         
-        DPRINT("Unfortunately, there is now way to test the all() methods, your MUST TEST using visual inspection");
+        DPRINT("Unfortunately, there is now way to test the all() methods,\r\n your MUST TEST using visual inspection");
 
         for(int i = 0; i <= 4095; i += 8)
         {
@@ -123,7 +123,7 @@ namespace Test
     {
         PCA9685 device;
 
-        DPRINT("Unfortunately, there is now way to test the all() methods, your MUST TEST using visual inspection");
+        DPRINT("Unfortunately, there is now way to test the all() methods,\r\n your MUST TEST using visual inspection");
     
         for(int i = 0; i <= 10; i++)
         {

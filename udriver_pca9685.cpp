@@ -13,7 +13,7 @@ using namespace UDriver_PCA9685;
 //PCA9685 Class
 PCA9685::PCA9685(I2CAddress addr)
 {
-    this->address = addr; //I2c Address to communicate with the PCA9685
+    this->address = addr;
     this->wake();
 }
 
@@ -65,6 +65,7 @@ void PCA9685::configure_mode(Mode setting, uint8_t value)
     mode_register |= (value << setting);  //Set setting bit if specified value
     this->register_write(REG_ADDR_MODE, mode_register);
 }
+    
 
 void PCA9685::restore_mode()
 {
@@ -148,7 +149,6 @@ void PCA9685::digital_write_all(int value)
     this->restore_mode();
 }
 
-
 void PCA9685::pwm_write(Pin pin, int value)
 {
     if(value < UDRIVER_PCA9685_PWM_MIN || value > UDRIVER_PCA9685_PWM_MAX)
@@ -214,5 +214,26 @@ void PCA9685::set_pwm_frequency(int frequency)
     this->sleep();
     this->register_write(REG_ADDR_PRESCALE, PRESCALE_VALUE(frequency));
     this->restore_mode();
+}
+
+#define REG_ADDR_ACALL 0x05
+#define REG_ADDR_SUB(n) (0x01 +  n)
+void PCA9685::change_address(I2CAddress addr)
+{
+    if(addr <= 0x07 || addr >= 0xF0) return; //Reject Reserved Addresses
+    this->configure_mode(Mode_AllCall_Addr, 1);
+    this->register_write(REG_ADDR_ACALL, addr);
+    this->address = addr;
+}
+
+void PCA9685::add_alt_address(I2CAddress addr)
+{
+    if(addr <= 0x07 || addr >= 0xF0) return; //Reject Reserved Addresses
+    this->sub_addr = (this->sub_addr + 1) % 4;
+
+    if(this->sub_addr == 1) this->configure_mode(Mode_SubCall1_Addr, 1);
+    if(this->sub_addr == 2) this->configure_mode(Mode_SubCall2_Addr, 1);
+    if(this->sub_addr == 3) this->configure_mode(Mode_SubCall3_Addr, 1);
+    this->register_write(REG_ADDR_SUB(this->sub_addr), addr);
 }
 

@@ -85,14 +85,19 @@ namespace UDriver_PCA9685
         /* Make the PCA9685 do a software reset */
         void software_reset();
 
+        /* Change the PCA9685's main address to a new i2c q:address*/
+        void change_address(I2CAddress addr);
+        
     private:
         I2CAddress address;
-        uint8_t prev_mode;
+        uint8_t sub_addr = 0;
+        uint8_t prev_mode = 0;
         
         void register_write(uint8_t reg_addr, uint8_t value);
         uint8_t register_read(uint8_t reg_addr);
         void configure_mode(Mode setting, uint8_t value);
         void restore_mode();
+        void add_alt_address(I2CAddress addr);
     };
 }
 
