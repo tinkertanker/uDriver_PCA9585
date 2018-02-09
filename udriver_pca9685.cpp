@@ -141,6 +141,7 @@ void PCA9685::digital_write_all(int value)
         this->register_write(REG_ADDR_ALL_OFF_H, 0x10);
     }
 
+    this->pulse_mode = 0;
 }
 
 void PCA9685::pwm_write(Pin pin, int value)
@@ -190,6 +191,8 @@ void PCA9685::pwm_write_all(int value)
         this->register_write(REG_ADDR_ALL_OFF_H, off_hsb);
 
     }
+
+    this->pulse_mode = 0;
 }
  
 void PCA9685::pwm_pulse(Pin pin, int pulse_us)
@@ -292,3 +295,30 @@ void PCA9685ServoController::move_servo(Pin pin, double angle_deg)
     this->pwm_pulse(pin, pulse_us);
 }
 
+//Functional Callbacks for makecode package
+namespace UDriver_PCA9685
+{
+    static PCA9685ServoController *pca_device = new PCA9685ServoController;
+    //%
+    void digital_write(int pin, int value){ pca_device->digital_write((Pin)pin, value); }
+    //%
+    void digital_write_all(int pin, int value){ pca_device->digital_write_all(value); }
+    //%
+    void pwm_write(int pin, int value){ pca_device->pwm_write((Pin)pin, value); }
+    //%
+    void pwm_write_all(int pin, int value){ pca_device->pwm_write_all(value); }
+    //%
+    void pwm_pulse(int pin, int pulse_us) { pca_device->pwm_pulse((Pin)pin, pulse_us); }
+    //%
+    void set_pwm_frequency(int frequency){ pca_device->set_pwm_frequency(frequency); }
+    //%
+    void sleep(){ pca_device->sleep(); }
+    //%
+    void wake(){ pca_device->wake(); }
+    //%
+    void software_reset(){ pca_device->software_reset(); }
+    //%
+    void move_servo(int pin, int angle_deg){ pca_device->move_servo((Pin)pin, angle_deg);}
+    //%
+    void configure_servo(int pin, int min, int max){ pca_device->configure_servo((Pin)pin, min, max); }
+}

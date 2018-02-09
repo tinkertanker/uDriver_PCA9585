@@ -110,7 +110,7 @@ namespace UDriver_PCA9685
     {
     public:
         PCA9685ServoController(I2CAddress addr=I2C_ADDRESS_ALL_CALL);
-
+    
         /* Move the servo's shaft to a certain angle in degrees */
         void move_servo(Pin pin, double angle_deg);
         
@@ -126,6 +126,5 @@ namespace UDriver_PCA9685
         uint16_t pulse_min[16];
         uint16_t pulse_max[16];
     };
-
 }
 #endif /* ifndef UDRIVER_PCA9685 */
