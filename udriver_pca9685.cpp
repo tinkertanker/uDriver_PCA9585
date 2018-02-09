@@ -65,7 +65,6 @@ void PCA9685::configure_mode(Mode setting, uint8_t value)
     mode_register |= (value << setting);  //Set setting bit if specified value
     this->register_write(REG_ADDR_MODE, mode_register);
 }
-    
 
 void PCA9685::restore_mode()
 {
@@ -102,8 +101,6 @@ void PCA9685::digital_write(Pin pin, int value)
 {
     if(value < 0 || value > 1) return;
     
-    this->wake();
-
     if(value == 1)
     {
         this->register_write(REG_ADDR_OFF_L(pin), 0x00);
@@ -118,16 +115,12 @@ void PCA9685::digital_write(Pin pin, int value)
         this->register_write(REG_ADDR_OFF_L(pin), 0x00);
         this->register_write(REG_ADDR_OFF_H(pin), 0x10);
     }
-
-    this->restore_mode();
 }
 
 void PCA9685::digital_write_all(int value)
 {
     if(value < 0 || value > 1)
         return; 
-
-    this->wake();
 
     if(value == 1)
     {
@@ -146,15 +139,12 @@ void PCA9685::digital_write_all(int value)
         this->register_write(REG_ADDR_ALL_OFF_H, 0x10);
     }
 
-    this->restore_mode();
 }
 
 void PCA9685::pwm_write(Pin pin, int value)
 {
     if(value < UDRIVER_PCA9685_PWM_MIN || value > UDRIVER_PCA9685_PWM_MAX)
         return;
-
-    this->wake();
 
     //ON Register
     this->register_write(REG_ADDR_ON_L(pin), 0x00);
@@ -168,7 +158,6 @@ void PCA9685::pwm_write(Pin pin, int value)
     this->register_write(REG_ADDR_OFF_L(pin), off_lsb);
     this->register_write(REG_ADDR_OFF_H(pin), off_hsb);
     
-    this->restore_mode();
 }
 
 void PCA9685::pwm_write_all(int value)
@@ -176,8 +165,6 @@ void PCA9685::pwm_write_all(int value)
     if(value < UDRIVER_PCA9685_PWM_MIN || value > UDRIVER_PCA9685_PWM_MAX)
         return; 
 
-    this->wake();
-    
     if(value == 0)
     {
         //Write default value
@@ -201,7 +188,6 @@ void PCA9685::pwm_write_all(int value)
         this->register_write(REG_ADDR_ALL_OFF_H, off_hsb);
 
     }
-    this->restore_mode();
 }
  
 #define REG_ADDR_PRESCALE 0xFE
@@ -235,5 +221,75 @@ void PCA9685::add_alt_address(I2CAddress addr)
     if(this->sub_addr == 2) this->configure_mode(Mode_SubCall2_Addr, 1);
     if(this->sub_addr == 3) this->configure_mode(Mode_SubCall3_Addr, 1);
     this->register_write(REG_ADDR_SUB(this->sub_addr), addr);
+}
+
+//PCA9685 Servo Controller Class
+#define PCA9685_PIN_MIN 0
+#define PCA9685_PIN_MAX 15
+PCA9685ServoController::PCA9685ServoController(I2CAddress addr)
+{
+    this->address = addr;
+    this->wake();
+
+    //Set default values
+    for(int pin = PCA9685_PIN_MIN; pin <= PCA9685_PIN_MAX; pin ++)
+    {
+        this->pulse_min[pin] = 1000; //1000 usec
+        this->pulse_max[pin] = 2000; //2000 usec
+    }
+    
+    this->pin_mode = 0x0000;
+    this->set_pwm_frequency(50); //50 H4
+}
+
+void PCA9685ServoController::configure_servo(Pin pin, int min_us, int max_us)
+{
+    this->pulse_max[pin] = max_us;
+    this->pulse_min[pin] = min_us;
+}
+
+void PCA9685ServoController::move_servo(Pin pin, double angle_deg)
+{
+    angle_deg = (angle_deg > 180.0) ? 180.0 : angle_deg;
+    angle_deg = (angle_deg < 0.0) ? 0.0 : angle_deg;
+
+    int pulse_us = round((angle_deg / 180.0) * (2000.0 - 1000.0) + 1000.0);
+    
+    DPRINTF("angle: %d pulse_us: %d\r\n", (int)angle_deg, pulse_us);
+    this->pwm_servo(pin, pulse_us);
+}
+
+void PCA9685ServoController::pwm_servo(Pin pin, int pulse_us)
+{
+    pulse_us = (pulse_us < this->pulse_min[pin]) ? this->pulse_min[pin] 
+        : pulse_us;
+    pulse_us = (pulse_us > this->pulse_max[pin]) ? this->pulse_max[pin] 
+        : pulse_us;
+    
+    //Time per PWM division in microseconds.      | ms      | us
+    double tick = (double) (1.0 / this->pwm_freq) * 1000.0 * 1000.0 / 4095.0;
+    int pwm_pulse = round((double) pulse_us / tick);
+    
+    DPRINTF("us: %d tick: %d pwm pulse: %d\r\n", pulse_us, (int) tick, pwm_pulse);
+    
+    this->pin_mode |= (1 << pin); //Mark that this pin holds a servo
+    this->pulse_len[pin] = pulse_us;
+    
+    this->pwm_write(pin, pwm_pulse);
+}
+
+void PCA9685ServoController::set_pwm_frequency(int frequency)
+{
+    PCA9685::set_pwm_frequency(frequency);
+    this->pwm_freq = frequency;
+
+    //Reconfigure PWM ticks based on new PWM frequency 
+    for(int pin = PCA9685_PIN_MIN; pin <= PCA9685_PIN_MAX; pin ++)
+    {
+        if(this->pin_mode & (1UL << pin))
+        {
+            this->pwm_servo((Pin)pin, this->pulse_len[pin]);
+        }
+    }
 }
 

@@ -47,13 +47,14 @@ namespace UDriver_PCA9685
 
     const I2CAddress I2C_ADDRESS_ALL_CALL = 0xE0;
     
+    /* Represents an PCA9685 */
     class PCA9685
     {
     public:
         /* Construct a new instance of PCA9685 for the optional i2c address
          * If no i2c address is given would use all call address
         */
-        PCA9685 (I2CAddress addr=I2C_ADDRESS_ALL_CALL);
+        PCA9685(I2CAddress addr=I2C_ADDRESS_ALL_CALL);
 
         /* digital write 0 or 1 to the given PWM Pin on the PCA9685 */
         void digital_write(Pin pin, int value);
@@ -66,13 +67,12 @@ namespace UDriver_PCA9685
 
         /* PWM write value between 0-4095 to all PWM Pins on the PCA9685 */
         void pwm_write_all(int value);
-        
-        
-        /* Change the PWM modulation frequency to the given frequency in hertz 
+
+        /* Change the PWM modulation frequency to the given frequency in hertz.
          * NOTE: This function assumes that no external clock is used, and the
          * internal osicalltor, with a clockfrequency of 25MHz, is used. 
         */
-        void set_pwm_frequency(int frequency);
+        virtual void set_pwm_frequency(int frequency);
 
         /* Activate low-power sleep mode on the PCA9685.
         */
@@ -85,10 +85,10 @@ namespace UDriver_PCA9685
         /* Make the PCA9685 do a software reset */
         void software_reset();
 
-        /* Change the PCA9685's main address to a new i2c q:address*/
+        /* Change the PCA9685's main address to a new i2c address*/
         void change_address(I2CAddress addr);
         
-    private:
+    protected:
         I2CAddress address;
         uint8_t sub_addr = 0;
         uint8_t prev_mode = 0;
@@ -99,6 +99,34 @@ namespace UDriver_PCA9685
         void restore_mode();
         void add_alt_address(I2CAddress addr);
     };
-}
 
+    /* Represents a PCA9685 that can control servos */
+    class PCA9685ServoController : public PCA9685
+    {
+    public:
+        PCA9685ServoController(I2CAddress addr=I2C_ADDRESS_ALL_CALL);
+
+        /* Move the servo's shaft to a certain angle in degrees */
+        void move_servo(Pin pin, double angle_deg);
+        
+        /* Operate the servo using PWM with a pulse of the given microsecond
+         * length.
+         */
+        void pwm_servo(Pin pin, int pulse_us);
+        
+        /* Configure the minimal pulse, maximum pulse  in microseconds 
+         * for the servo for the given Pin. */
+        void configure_servo(Pin pin, int min_us, int max_us);
+
+        /* Change the servo PWM modulation frequecy */
+        virtual void set_pwm_frequency(int frequency);
+    protected:
+        uint16_t pin_mode;
+        uint16_t pulse_min[16];
+        uint16_t pulse_max[16];
+        uint16_t pulse_len[16];
+        uint16_t pwm_freq;
+    };
+
+}
 #endif /* ifndef UDRIVER_PCA9685 */
