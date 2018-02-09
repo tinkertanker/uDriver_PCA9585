@@ -67,12 +67,15 @@ namespace UDriver_PCA9685
 
         /* PWM write value between 0-4095 to all PWM Pins on the PCA9685 */
         void pwm_write_all(int value);
+    
+        /* PWM pulse - pulse for the given microseconds for every PWM cycle */
+        virtual void pwm_pulse(Pin pin, int pulse_us);
 
         /* Change the PWM modulation frequency to the given frequency in hertz.
          * NOTE: This function assumes that no external clock is used, and the
          * internal osicalltor, with a clockfrequency of 25MHz, is used. 
         */
-        virtual void set_pwm_frequency(int frequency);
+        void set_pwm_frequency(int frequency);
 
         /* Activate low-power sleep mode on the PCA9685.
         */
@@ -92,6 +95,9 @@ namespace UDriver_PCA9685
         I2CAddress address;
         uint8_t sub_addr = 0;
         uint8_t prev_mode = 0;
+        uint16_t pwm_freq = 200;
+        uint16_t pulse_mode = 0;
+        uint16_t pulse_len[16];
         
         void register_write(uint8_t reg_addr, uint8_t value);
         uint8_t register_read(uint8_t reg_addr);
@@ -109,23 +115,17 @@ namespace UDriver_PCA9685
         /* Move the servo's shaft to a certain angle in degrees */
         void move_servo(Pin pin, double angle_deg);
         
-        /* Operate the servo using PWM with a pulse of the given microsecond
-         * length.
-         */
-        void pwm_servo(Pin pin, int pulse_us);
-        
         /* Configure the minimal pulse, maximum pulse  in microseconds 
          * for the servo for the given Pin. */
         void configure_servo(Pin pin, int min_us, int max_us);
 
-        /* Change the servo PWM modulation frequecy */
-        virtual void set_pwm_frequency(int frequency);
+        /* Send PWM pulse to the servo */
+        virtual void pwm_pulse(Pin pin, int pulse_us);
+        
     protected:
-        uint16_t pin_mode;
+        uint16_t servo_mode;
         uint16_t pulse_min[16];
         uint16_t pulse_max[16];
-        uint16_t pulse_len[16];
-        uint16_t pwm_freq;
     };
 
 }
