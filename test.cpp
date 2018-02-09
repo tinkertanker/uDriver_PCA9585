@@ -160,12 +160,12 @@ namespace Test
 #define REG_ADDR_OFF_L(pin) (pin * 4 + 2 + 6)
 #define REG_ADDR_OFF_H(pin) (pin * 4 + 3 + 6)
 
-
-    void test_pwm_servo()
+    void test_pwm_pulse_servo()
     {
         PCA9685ServoController device;
         device.set_pwm_frequency(50);
-        device.pwm_servo(Pin_P13, 1500);
+        device.servo_mode |=  (1 << Pin_P13); //Mark this pin as servo pin.
+        device.pwm_pulse(Pin_P13, 1500);
         TEST_EQUAL(device.pulse_len[Pin_P13], 1500);
         double tick = (1.0/50.0) * 1000.0 * 1000.0 / 4095.0;
         uint16_t pwm_pulse = floor(1500.0 / tick);
@@ -179,8 +179,10 @@ namespace Test
         TEST_EQUAL(device.register_read(REG_ADDR_OFF_L(Pin_P13)), l_pwm_pulse);
         TEST_EQUAL(device.register_read(REG_ADDR_OFF_H(Pin_P13)), h_pwm_pulse);
     
+
+        device.servo_mode |=  (1 << Pin_P15); //Mark this pin as servo pin.
         device.configure_servo(Pin_P15, 544, 2400);
-        device.pwm_servo(Pin_P15, 9999);
+        device.pwm_pulse(Pin_P15, 9999);
 
         pwm_pulse = floor(2400.0 / tick);
 
@@ -190,7 +192,7 @@ namespace Test
         TEST_EQUAL(device.register_read(REG_ADDR_OFF_L(Pin_P15)), l_pwm_pulse);
         TEST_EQUAL(device.register_read(REG_ADDR_OFF_H(Pin_P15)), h_pwm_pulse);
 
-        device.pwm_servo(Pin_P15,-9999);
+        device.pwm_pulse(Pin_P15,-9999);
 
         pwm_pulse = floor(544.0 / tick);
 
@@ -240,7 +242,7 @@ namespace Test
         TEST(test_set_pwm_frequency);
         TEST(test_software_reset);
         TEST(test_configure_servo);
-        TEST(test_pwm_servo);
+        TEST(test_pwm_pulse_servo);
         TEST(test_move_servo);
         TEST_END;
     }
