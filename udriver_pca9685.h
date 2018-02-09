@@ -2,7 +2,6 @@
 #define UDRIVER_PCA9685
 
 #include "pxt.h"
-#include "utest/utest.h"
 
 #define UDRIVER_PCA9685_PANIC_CODE 90
 #define UDRIVER_PCA9685_PWM_MAX 4095

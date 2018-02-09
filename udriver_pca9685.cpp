@@ -3,10 +3,9 @@
  * PCA9685 Driver for the MicroBit
 */
 
-#define DEBUG
-
 #include "udriver_pca9685.h"
 
+#undef printf
 #define PCA9685_PIN_MIN 0
 #define PCA9685_PIN_MAX 15
 
