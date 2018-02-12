@@ -42,6 +42,7 @@ namespace UDriver_PCA9685
     */
     //%blockId=UDriver_PCA9685_analog_write
     //%block="analog write|to pin %pin|value %value"
+    //%shim=UDriver_PCA9685::analog_write 
     export function analog_write(pin:Pin, value:number)
     {
         if(value < 0 || value > 1023)
@@ -50,9 +51,9 @@ namespace UDriver_PCA9685
                 "- Analog Write value not a value  between 0 to 1023");
             return;
         }
-        
-        let pwm_value = value / 1023.0 * 4095.0;
-        pwm_write(pin, pwm_value);
+
+        //Dummy implementation for the Microbit simulator
+        console.log("PWM UDriver_PCA9685: analog_write: " + value);
     }
 
     /** 
@@ -61,17 +62,17 @@ namespace UDriver_PCA9685
     */
     //%blockId=UDriver_PCA9685_analog_write_all
     //%block="analog write|value %value|to all pins"
+    //%shim=UDriver_PCA9685::analog_write_all
     export function analog_write_all(value:number)
     {
         if(value < 0 || value > 1023)
         {
-            console.log("uDriver PCA9685: analog_write(): Invaild Argument " +
+            console.log("uDriver PCA9685: analog_write_all(): Invaild Argument " +
                 "- Analog Write value not a value  between 0 to 1023");
             return;
         }
-        
-        let pwm_value = value / 1023.0 * 4095.0;
-        pwm_write_all(pwm_value);
+        //Dummy implementation for the Mircobit simulator
+        console.log("PWM UDriver_PCA9685: analog_write_all: " + value);
     }
 
     /**
@@ -90,7 +91,7 @@ namespace UDriver_PCA9685
             return;
         }
         //Dummy Implmentation for the Microbit simulator
-        console.log("Simulate:uDriver PCA9685:digital_write");
+        console.log("Simulate:uDriver PCA9685:digital_write:" + value);
     }
 
 
@@ -110,8 +111,9 @@ namespace UDriver_PCA9685
             return;
         }
         //Dummy Implmentation for the Microbit simulator
-        console.log("Simulate:uDriver PCA9685:digital_write_all");
+        console.log("Simulate:uDriver PCA9685:digital_write_all" + value);
     }
+
 
     /**
      * Make the servo attached on the given 'pin' move its shaft to the position
@@ -130,7 +132,8 @@ namespace UDriver_PCA9685
         }
 
         //Dummy Implmentation for the Microbit simulator
-        console.log("Simulate:uDriver PCA9685:move_servo");
+        //Simulates the PWM signals that control the servo 
+        console.log("PWM Simulate:uDriver PCA9685: move_servo:" + angle_deg);
     }
 
     
@@ -150,7 +153,7 @@ namespace UDriver_PCA9685
             return;
         }
         //Dummy Implmentation for the Microbit simulator
-        console.log("Simulate:uDriver PCA9685:pwm_write");
+        console.log("PWM Simulate:uDriver PCA9685:pwm_write: " + value );
     }
 
     /**
@@ -171,7 +174,7 @@ namespace UDriver_PCA9685
             return;
         }
         //Dummy Implmentation for the Microbit simulator
-        console.log("Simulate:uDriver PCA9685:pwm_write_all");
+        console.log("PWM Simulate:uDriver PCA9685:pwm_write_all:" + value);
     }
 
     /**
@@ -202,7 +205,7 @@ namespace UDriver_PCA9685
         }
 
         //Dummy Implmentation for the Microbit simulator
-        console.log("Simulate:uDriver PCA9685:pwm_pulse");
+        console.log("PWM Simulate:uDriver PCA9685: pwm pulse:" + microseconds);
     }
 
     /**
@@ -221,10 +224,11 @@ namespace UDriver_PCA9685
         {
             console.log("uDriver PCA9685: set_pwm_frequency(): Invaild Argument " +
                 "- Only frequencies between 24 Hz and 1526 Hz are supported");
+            return;
         }
 
         //Dummy Implmentation for the Microbit simulator
-        console.log("Simulate:uDriver PCA9685:set_pwm_frequency");
+        console.log("Simulate:uDriver PCA9685:set_pwm_frequency: "+ frequency);
 
         pwm_frequency = frequency;
     }
@@ -286,6 +290,7 @@ namespace UDriver_PCA9685
     export function configure_servo(pin:Pin, min_value:number, max_value:number)
     {
         //Dummy Implmentation for the Microbit simulator
-        console.log("Simulate:uDriver PCA9685:configure_servo");
+        console.log("Simulate:uDriver PCA9685:configure_servo: pin:" + pin
+            + " min:" + min_value + " max:" + max_value );
     } 
 }
