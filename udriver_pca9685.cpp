@@ -306,7 +306,17 @@ namespace UDriver_PCA9685
     //%
     void pwm_write(int pin, int value){ pca_device->pwm_write((Pin)pin, value); }
     //%
-    void pwm_write_all(int pin, int value){ pca_device->pwm_write_all(value); }
+    void pwm_write_all(int value){ pca_device->pwm_write_all(value); }
+    //%
+    void analog_write(int pin, int value){ 
+        int pwm_value = (int)((double) value / 1023.0 * 4095.0);
+        pwm_write(pin, pwm_value);
+    }
+    //%
+    void analog_write_all(int value){ 
+        int pwm_value = (int)((double) value / 1023.0 * 4095.0);
+        pwm_write_all(pwm_value);
+    }
     //%
     void pwm_pulse(int pin, int pulse_us) { pca_device->pwm_pulse((Pin)pin, pulse_us); }
     //%
