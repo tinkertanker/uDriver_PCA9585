@@ -26,9 +26,9 @@ PCA9685(i2c address) - create PCA9685 object for i2c address - defaults to globa
 digital_write(pin, 1 or 0)- digital write to the given GVS pin 
 digital_write( 1 or 0)- Same thing but for all GVS pins
 
-analog_write(pin, %duty_cycle) - write % duty cycle to the a set of GVS pins on
-    the PCA9685 - analog is a value mapping to pwm write as makecode SHIM does  
-    not support floating point type mapping
+analog_write(pin, %duty_cycle) - write analog value from 0 to 1023 o the a set 
+    of GVS pins on the PCA9685 - analog is a value mapping to pwm write as 
+    makecode SHIM does not support floating point type mapping
 analog_write_all(pin, %duty_cycle) -Same thing but for all GVS pins
 
 pwm_write(pin, value) - PWM write value between 0 4095 to the pin on the PCA9685
